@@ -1,16 +1,16 @@
 const mongoose=require("mongoose")
 
 const postSchema = new mongoose.Schema({
-    user:[{
+    user:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
         require:true
-    }],
+    },
     caption:{
         type:String,
         trim:true
     },
-    image:[{
+    images:[{
         type:String,
         required:false
     }],
