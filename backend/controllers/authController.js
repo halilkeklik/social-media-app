@@ -1,13 +1,14 @@
 const User=require("../models/User")
 const bcrypt=require("bcrypt")
 const jwt=require("jsonwebtoken")
+const { CustomError } = require("../middlewares/error")
 
 const registerController=async (req,res,next)=>{
     try{
        const {password,username,email}=req.body
        const existingUser=await User.findOne({ $or: [{username},{email}] })
        if(existingUser){
-         res.status(400).json("UserName or email already used")
+         throw new CustomError("Username or email already exists!",400)
        }
 
        const salt=await bcrypt.genSalt(10)
@@ -18,7 +19,7 @@ const registerController=async (req,res,next)=>{
        
     }
     catch(error){
-        res.status(500).json(error)
+        next(error)
     }
 }
 
@@ -29,7 +30,7 @@ const loginController=async (req,res,next)=>{
             user=await User.findOne({email:req.body.email})
         }
         else{
-            user=await User.findOne({userName:req.body.userName})
+            user=await User.findOne({username:req.body.username})
         }
 
         if(!user){
@@ -39,7 +40,7 @@ const loginController=async (req,res,next)=>{
         const match=await bcrypt.compare(req.body.password,user.password)
 
         if(!match){
-            return res.status(401).json("UserName or password wrong")
+            throw new CustomError("Wrong Credentials!",401)
         }
 
         const {password,...data}=user._doc
@@ -48,7 +49,7 @@ const loginController=async (req,res,next)=>{
 
     }
     catch(error){
-        res.status(500).json(error)
+        next(error)
     }
 }
 
@@ -58,7 +59,7 @@ const logoutController=async(req,res,next)=>{
 
     }
     catch(error){
-        res.status(500).json(error)
+        next(error)
     }
 }
 
@@ -66,7 +67,7 @@ const refetchUserController=async(req,res,next)=>{
     const token=req.cookies.token
     jwt.verify(token,process.env.JWT_SECRET,{},async(err,data)=>{
         if(err){
-            res.status(404).json(err)
+            throw new CustomError(err,404)
         }
         try{
           const id=data._id
@@ -74,7 +75,7 @@ const refetchUserController=async(req,res,next)=>{
           res.status(200).json(user)
         }
         catch(error){
-            res.status(500).json(error)
+            next(error)
         }
     })
 }
